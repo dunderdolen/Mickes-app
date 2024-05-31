@@ -1,0 +1,85 @@
+{% extends "home.html" %}
+{% block content %}
+  <div class="jumbotron jumbotron-fluid">
+    <div class="container">
+      <h1 class="display-5 text-center mt-5">Authorization Code</h1>
+      <p class="lead text-center">The Authorization Code Flow involves exchanging an authorization code for a token.</p>
+    </div>
+  </div>
+  <div class="d-flex justify-content-center mb-5">
+    <a class="btn btn-primary text-center" href="/clear_session">Clear Session</a>
+  </div>
+  <div class="jumbotron jumbotron-fluid">
+    <div class="container">
+      <h1 class="display-6 mt-5">Step 1:</h1>
+      <p class="lead mb-3" style="text-align: left;">
+        The flow starts when a user is initiating login by clicking on a login button or link within the application. Our application (with Auth0 SDK) will send a Authorization Code request to the Auth0 tenant. 
+        Auth0 redirects to the login prompt for authentication, in this case Universal Login. The URL below is what our application will send to /authorize and where Auth0 should redirect to with the code.  
+    </p>
+    <a class="btn btn-primary" href="/get_authorize_code_url">Get Authorization Code URL</a>
+      {%if auth_url %}
+        <p class="lead mt-3" style="text-align: left;">
+          <a class="text-dark" style="text-align: left; margin-bottom: 35px;" href="{{auth_url}}">{{ auth_url|replace('?', '?<br>')|replace('&', '<br>&')|replace('=', '=')|safe }}</a>
+          <br>
+          <br>
+          Let's digest what we have:<br>
+          <b>response_type</b> = Means what type of response are we expecting to get back from Auth0 <br>
+          <b>client_id</b> = Identifier for the client that the user is authenticating through <br>
+          <b>redirect_uri</b> = The URL Auth0 redirects to when authentication is done <br>
+          <b>scope</b> = The rights granted to the application by the user. This grants the application the rights to retrieve the information from the Authorization server<br>
+          <b>state</b> = A state is generated for each request and is sent to the Authorization server. This should be validated to in each stage of the transaction so they match. If they don't match then it could be cross site forgery request (CSFR) <br>
+          <b>nonce</b> = A random or non-repeating value that is included in data exchanged by a protocol, usually for the purpose of guaranteeing the transmittal of live data rather than replayed data, thus detecting and protecting against replay attacks.
+        </p>
+      {%endif%}
+    </div>
+  </div>
+<!-- Check Jinja variables for dynamically changing the collapse based on step in session -->
+  {% if session['step_1_done'] %}
+  <div class="jumbotron jumbotron-fluid">
+    <div class="container">
+      <h1 class="display-6 mt-5">Step 2:</h1>
+      <p class="lead">
+        After authentication Auth0 Authorization Server sends a HTTP 302 redirect to our browser that takes us to our callback function: <br><b>GET /callback?code={{ session.response_code }}&state={{response_state }}</b><br>
+        Notice that the state we got back from Auth0: {{ session.response_state }} is equal to the state that we sent initially: <b> {{ auth_state }} </b><br>
+        <br>
+        Now that we have the code we can call the /token endpoint {{ token_url }} to exchange our code for an access token.<br>
+        This is the payload we are sending:<br> {{token_payload}}
+        <br>
+        <a class="btn btn-primary" href="{{session.token_exchange_url}}">My code for your token</a>
+        {%if session.access_token %}
+          <div class="d-flex justify-content-center">
+            <div class="card border-success mb-3">
+              <div class="card-header">Access Token</div>
+              <div class="card-body text-success">
+                <p class="card-text">{{session.access_token}}</p>
+              </div>
+            </div>
+            <div class="card border-success mb-3">
+              <div class="card-header">ID Token</div>
+              <div class="card-body text-success">
+                <p class="card-text">{{session.userinfo}}</p>
+              </div>
+            </div>
+          </div>
+      </p>
+    </div>
+  </div>
+  {%endif%}
+{%endif%}
+{% if 'step_2_done' in session %}
+  <div class="jumbotron jumbotron-fluid">
+    <div class="container" id="scroll_to">
+      <h1 class="display-6 mt-5">Generate sequence diagram</h1>
+      <p class="lead">
+        In our example we are dissecting each step for learning purposes but in a real scenario the user would only see the login part and the backend handles the rest. <br>
+        Click to generate a sequence diagram to see the flow as a whole. <br>
+        <a class="btn btn-primary text-center" href="/generate_sequence_diagram">Generate</a>
+        <br>
+        <a href="{{diagram}}" target="_blank">{{ diagram }}</a>
+      </p>
+    </div>
+    <!-- Generate image from url and use img src="url" to display it on the page -->
+  </div>
+  {%endif%}
+
+{% endblock %}
