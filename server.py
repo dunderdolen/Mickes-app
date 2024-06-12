@@ -25,19 +25,20 @@ oauth.register(
 
 @app.route("/authorization-code", methods=["GET","POST"])
 def authorize_code_flow():
-    auth_url        = request.args.get('auth_url')
-    token_url       = request.args.get('token_url')
-    token_payload   = request.args.get('token_payload')
-    token_headers   = request.args.get('token_headers')
-    token           = request.args.get('token')
-    userinfo        = request.args.get('userinfo')
-    formatted_token = json.dumps(token, sort_keys = True, indent = 4, separators = (',', ': ')) 
-    diagram         = request.args.get('diagram')
+    auth_url                    = request.args.get('auth_url')
+    session['token_url']        = request.args.get('token_url')
+    session['token_payload']    = request.args.get('token_payload')
+    token_headers               = request.args.get('token_headers')
+    token                       = request.args.get('token')
+    userinfo                    = request.args.get('userinfo')
+    formatted_token             = json.dumps(token, sort_keys = True, indent = 4, separators = (',', ': ')) 
+    diagram                     = request.args.get('diagram')
 
-    return render_template("authorization-code.html", auth_state=session.get('auth_state'), userinfo=userinfo, diagram=diagram, auth_url=auth_url, token_url=token_url, token_payload=token_payload, token_headers=token_headers, token=formatted_token)
+    return render_template("authorization-code.html", auth_state=session.get('auth_state'), userinfo=userinfo, diagram=diagram, auth_url=auth_url, token_url=session.get('token_url'), token_payload=session.get('token_payload'), token_headers=token_headers, token=formatted_token)
 
 @app.route("/get_authorize_code_url")
 def get_authorize_code_url():
+    session['step'] = 1
     auth_url = oauth.auth0.authorize_redirect(redirect_uri=url_for("callback", _external=True))
     parsed_url = urlparse(auth_url.location)
     query_params = parse_qs(parsed_url.query)
@@ -48,15 +49,14 @@ def get_authorize_code_url():
 @app.route("/clear_session")
 def clear_session():
     session.clear()
+    session['step'] = 1
     return redirect(url_for("authorize_code_flow"))
 
 @app.route("/callback")
 def callback():
     session['response_code'] = request.args.get('code')
     session['response_state'] = request.args.get('state')
-    session['step_1_done'] = True
-    #show step 2 in html
-    
+    session['step'] = 2   
     token_url = f'https://{env.get("AUTH0_DOMAIN")}/oauth/token'
     payload = {
         'grant_type': 'authorization_code',
@@ -74,18 +74,12 @@ def callback():
 
 @app.route("/token_exchange", methods=["GET", "POST"])
 def token_exchange():
-    session['step_2_done'] = True
-    #show step 3 in html
     token = oauth.auth0.authorize_access_token()
     session['access_token'] = token['access_token']
     session['userinfo'] = token['userinfo']
-    
-    return redirect(url_for("authorize_code_flow"))
-    
+    session['step'] = 3
 
-@app.route("/generate_sequence_diagram", methods=["GET", "POST"])
-def generate_sequence_diagram():
-    url = "https://api.swimlanes.io/v1/link"
+    url = "https://api.swimlanes.io/v1/image-link"
 
     entries = [
         "title: Authorization Code Flow",
@@ -105,9 +99,8 @@ def generate_sequence_diagram():
         "text": combined_text
     }
     response = requests.post(url, json=data)
-
+    
     return redirect(url_for("authorize_code_flow", diagram = response.headers.get('Location')))
-
 
 @app.route("/logout")
 def logout():

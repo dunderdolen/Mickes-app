@@ -9,7 +9,7 @@
   <div class="d-flex justify-content-center mb-5">
     <a class="btn btn-primary text-center" href="/clear_session">Clear Session</a>
   </div>
-  <div class="jumbotron jumbotron-fluid">
+  <div class="jumbotron jumbotron-fluid collapse {{ 'show' if session['step'] == 1  }}">
     <div class="container">
       <h1 class="display-6 mt-5">Step 1:</h1>
       <p class="lead mb-3" style="text-align: left;">
@@ -33,9 +33,7 @@
       {%endif%}
     </div>
   </div>
-<!-- Check Jinja variables for dynamically changing the collapse based on step in session -->
-  {% if session['step_1_done'] %}
-  <div class="jumbotron jumbotron-fluid">
+  <div class="jumbotron jumbotron-fluid collapse {{ 'show' if session['step'] == 2 }}">
     <div class="container">
       <h1 class="display-6 mt-5">Step 2:</h1>
       <p class="lead">
@@ -46,6 +44,16 @@
         This is the payload we are sending:<br> {{token_payload}}
         <br>
         <a class="btn btn-primary" href="{{session.token_exchange_url}}">My code for your token</a>
+      </p>
+    </div>
+  </div>
+  <div class="jumbotron jumbotron-fluid collapse {{ 'show' if session['step'] == 3 }}">
+    <div class="container">
+      <h1 class="display-6 mt-5">Step 3:</h1>
+      <p class="lead">
+        We called the /token endpoint and presented our code. Auth0 authorization server exchanged the code and gave the application an access token and an ID token. 
+        Then next step from here would be that the application calls some API with the access token. The ID token is just a token of that an authentication has occurred.
+      </p>
         {%if session.access_token %}
           <div class="d-flex justify-content-center">
             <div class="card border-success mb-3">
@@ -60,26 +68,10 @@
                 <p class="card-text">{{session.userinfo}}</p>
               </div>
             </div>
+            
           </div>
-      </p>
+          <img src="{{diagram}}" />
+        </div>
     </div>
-  </div>
   {%endif%}
-{%endif%}
-{% if 'step_2_done' in session %}
-  <div class="jumbotron jumbotron-fluid">
-    <div class="container" id="scroll_to">
-      <h1 class="display-6 mt-5">Generate sequence diagram</h1>
-      <p class="lead">
-        In our example we are dissecting each step for learning purposes but in a real scenario the user would only see the login part and the backend handles the rest. <br>
-        Click to generate a sequence diagram to see the flow as a whole. <br>
-        <a class="btn btn-primary text-center" href="/generate_sequence_diagram">Generate</a>
-        <br>
-        <a href="{{diagram}}" target="_blank">{{ diagram }}</a>
-      </p>
-    </div>
-    <!-- Generate image from url and use img src="url" to display it on the page -->
-  </div>
-  {%endif%}
-
 {% endblock %}
