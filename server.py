@@ -31,26 +31,51 @@ def authorize_code_flow():
     token_headers               = request.args.get('token_headers')
     token                       = request.args.get('token')
     userinfo                    = request.args.get('userinfo')
+    diagram_step_1              = request.args.get('diagram_step_1')
+    diagram_step_2              = request.args.get('diagram_step_2')
     formatted_token             = json.dumps(token, sort_keys = True, indent = 4, separators = (',', ': ')) 
     diagram                     = request.args.get('diagram')
 
-    return render_template("authorization-code.html", auth_state=session.get('auth_state'), userinfo=userinfo, diagram=diagram, auth_url=auth_url, token_url=session.get('token_url'), token_payload=session.get('token_payload'), token_headers=token_headers, token=formatted_token)
+    return render_template("authorization-code.html", diagram_step_1=diagram_step_1, diagram_step_2=diagram_step_2, auth_state=session.get('auth_state'), userinfo=userinfo, diagram=diagram, auth_url=auth_url, token_url=session.get('token_url'), token_payload=session.get('token_payload'), token_headers=token_headers, token=formatted_token)
 
 @app.route("/get_authorize_code_url")
 def get_authorize_code_url():
     session['step'] = 1
-    auth_url = oauth.auth0.authorize_redirect(redirect_uri=url_for("callback", _external=True))
-    parsed_url = urlparse(auth_url.location)
-    query_params = parse_qs(parsed_url.query)
-    session['auth_state'] =  query_params.get('state', [None])[0]
+    current_flow = request.args.get("flow")
+    if current_flow == "authorize_code_flow":
+        auth_url = oauth.auth0.authorize_redirect(redirect_uri=url_for("callback", _external=True))
+        parsed_url = urlparse(auth_url.location)
+        query_params = parse_qs(parsed_url.query)
+        session['auth_state'] =  query_params.get('state', [None])[0]
 
-    return redirect(url_for("authorize_code_flow", auth_url=auth_url.location))
+        url = "https://api.swimlanes.io/v1/image-link"
+
+        entries = [
+            "title: Authorization Code Flow",
+            "User -> Regular Web App: (1) Click Login link",
+            "Regular Web App -> Auth0: (2) Authorization Code Request to /authorize"
+            ]
+        combined_text = "\n".join(entries)
+        data = {
+            "text": combined_text
+        }
+        response = requests.post(url, json=data)
+        print(response.headers.get('Location'))
+        return redirect(url_for("authorize_code_flow", auth_url=auth_url.location, diagram_step_1=response.headers.get('Location')))
+        
+    elif current_flow == "implicit":
+        auth_url = f'https://{env.get("AUTH0_DOMAIN")}/.well-known/openid-configuration'
+    
 
 @app.route("/clear_session")
 def clear_session():
     session.clear()
     session['step'] = 1
-    return redirect(url_for("authorize_code_flow"))
+    current_flow = request.args.get("flow")
+    if current_flow == "authorize_code_flow":
+        return redirect(url_for("authorize_code_flow"))
+    elif current_flow == "implicit":
+        return redirect(url_for("implicit"))
 
 @app.route("/callback")
 def callback():
@@ -70,7 +95,24 @@ def callback():
         'Content-Type': 'application/x-www-form-urlencoded'
     }
     session['token_exchange_url'] = url_for('token_exchange',code=session['response_code'], state=session['response_state'])
-    return redirect(url_for("authorize_code_flow", token_url=token_url, token_payload=payload, token_headers=headers))    
+
+    url = "https://api.swimlanes.io/v1/image-link"
+
+    entries = [
+        "title: Authorization Code Flow",
+        "User -> Regular Web App: (1) Click Login link",
+        "Regular Web App -> Auth0: (2) Authorization Code Request to /authorize",
+        "Auth0 -> User: (3) Redirect to login/authorization prompt",
+        "User -> Auth0 Tenant: (4) Authenticate and Consent (if needed)",
+        "Auth0 -> Regular Web app: (5) Authorization code"
+    ]
+    combined_text = "\n".join(entries)
+    data = {
+        "text": combined_text
+    }
+    response = requests.post(url, json=data)
+
+    return redirect(url_for("authorize_code_flow", diagram_step_2 = response.headers.get('Location'), token_url=token_url, token_payload=payload, token_headers=headers))    
 
 @app.route("/token_exchange", methods=["GET", "POST"])
 def token_exchange():
@@ -101,6 +143,12 @@ def token_exchange():
     response = requests.post(url, json=data)
     
     return redirect(url_for("authorize_code_flow", diagram = response.headers.get('Location')))
+
+
+@app.route("/implicit")
+def implicit():
+
+    return render_template("implicit.html")
 
 @app.route("/logout")
 def logout():
