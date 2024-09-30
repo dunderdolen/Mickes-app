@@ -7,7 +7,7 @@
     </div>
   </div>
   <div class="d-flex justify-content-center mb-5">
-    <a class="btn btn-primary text-center" href="{{ url_for('clear_session', flow='authorize_code_flow') }}">Clear Session</a>
+    <a class="btn btn-primary text-center" href="{{ url_for('clear_session', response_type='code') }}">Clear Session</a>
   </div>
   <div class="jumbotron jumbotron-fluid collapse {{ 'show' if session['step'] == 1  }}">
     <div class="container">
@@ -16,7 +16,7 @@
         The flow starts when a user is initiating login by clicking on a login button or link within the application. Our application (with Auth0 SDK) will send a Authorization Code request to the Auth0 tenant. 
         Auth0 redirects to the login prompt for authentication, in this case Universal Login. The URL below is what our application will send to /authorize and where Auth0 should redirect to with the code.  
     </p>
-    <a class="btn btn-primary" href="{{ url_for('get_authorize_code_url', flow='authorize_code_flow') }}"">Get Authorization Code URL</a>
+    <a class="btn btn-primary" href="{{ url_for('get_authorize_code_url')}}"">Get Authorization Code URL</a>
       {%if auth_url %}
         <p class="lead mt-3" style="text-align: left;">
           <a class="text-dark" style="text-align: left; margin-bottom: 35px;" href="{{auth_url}}">{{ auth_url|replace('?', '?<br>')|replace('&', '<br>&')|replace('=', '=')|safe }}</a>

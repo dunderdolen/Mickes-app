@@ -2,37 +2,42 @@
 {% block content %}
   <div class="jumbotron jumbotron-fluid">
     <div class="container">
-      <h1 class="display-5 text-center mt-5">Implicit</h1>
-      <p class="lead text-center">You should use this flow for login-only use cases; if you need to request Access Tokens while logging the user in so you can call an API, use the Authorization Code Flow with PKCE or the Hybrid Flow.</p>
+      <h1 class="display-5 text-center mt-5">Implicit with form_post</h1>
+      <p class="lead text-center">
+        Don't let the term "implicit" mislead you! Although OAuth now discourages the use of the implicit grant for obtaining access tokens in SPAs, the scenario addressed by Implicit Flow with Form Post is completely different and is unaffected by the security issues that led to discouraging use with SPAs. Specifically, Implicit Flow with Form Post applies to traditional web apps as opposed to SPAs. You obtain ID tokens as opposed to access tokens, which have a completely different intended use. The flow uses POST as opposed to placing tokens in URL fragments (as with SPAs) which can expose token bits to browser history attacks, redirect headers, and so on.
+        You should use this flow for login-only use cases; if you need to request Access Tokens while logging the user in so you can call an API, use the Authorization Code Flow with PKCE or the Hybrid Flow.</p>
     </div>
   </div>
   <div class="d-flex justify-content-center mb-5">
-    <a class="btn btn-primary text-center" href="{{ url_for('clear_session', flow='implicit') }}"">Clear Session</a>
+    <a class="btn btn-primary text-center" href="{{ url_for('clear_session', response_type='id_token') }}"">Clear Session</a>
   </div>
   <div class="jumbotron jumbotron-fluid collapse {{ 'show' if session['step'] == 1  }}">
     <div class="container">
       <h1 class="display-6 mt-5">Step 1:</h1>
       <p class="lead mb-3" style="text-align: left;">
-        Info about step 1  
-    </p>
-    <a class="btn btn-primary" href="{{ url_for('get_authorize_code_url', flow='implicit') }}">Get Authorization Code URL</a>
-      
+        When the user clicks Login in the application, the authorization call will look like this in the background:
+      </p>
+    <a class="btn btn-primary" href="{{ url_for('get_implicit_url') }}">Get Implicit URL</a>
+      {%if auth_url %}
         <p class="lead mt-3" style="text-align: left;">
           <a class="text-dark" style="text-align: left; margin-bottom: 35px;" href="{{auth_url}}">{{ auth_url|replace('?', '?<br>')|replace('&', '<br>&')|replace('=', '=')|safe }}</a>
           <br>
           <br>
-          Let's digest what we have:<br>
-          <b>response_type</b> = Means what type of response are we expecting to get back from Auth0 <br>
-          <b>client_id</b> = Identifier for the client that the user is authenticating through <br>
-          <b>redirect_uri</b> = The URL Auth0 redirects to when authentication is done <br>
-          <b>scope</b> = The rights granted to the application by the user. This grants the application the rights to retrieve the information from the Authorization server<br>
-          <b>state</b> = A state is generated for each request and is sent to the Authorization server. This should be validated to in each stage of the transaction so they match. If they don't match then it could be cross site forgery request (CSFR) <br>
-          <b>nonce</b> = A random or non-repeating value that is included in data exchanged by a protocol, usually for the purpose of guaranteeing the transmittal of live data rather than replayed data, thus detecting and protecting against replay attacks.
         </p>
         <p class="lead mt-3" style="text-align: left;">
             This is where we are right now in the flow. A user has clicked Login somewhere in the application and our application makes a Authorization Code request to Auth0. Auth0 redirects to /authorize
         </p>
         <img src="{{diagram_step_1}}" />
+        {%endif%}
+    </div>
+  </div>
+  <div class="jumbotron jumbotron-fluid collapse {{ 'show' if session['step'] == 2  }}">
+    <div class="container">
+      <h1 class="display-6 mt-5">Step 2:</h1>
+      <p class="lead mb-3" style="text-align: left;">
+        The user clicks Login in the app. The authorization call will look like this in the background:
+      </p>
+        <img src="{{diagram_step_2}}" />
     </div>
   </div>
 {% endblock %}

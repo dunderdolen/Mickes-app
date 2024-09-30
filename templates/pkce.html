@@ -1,0 +1,28 @@
+{% extends "home.html" %}
+{% block content %}
+<script type="text/javascript" src="../static/auth.js"></script>
+
+<div class="jumbotron jumbotron-fluid">
+    <div class="container">
+        <h1 class="display-5 text-center mt-5">PKCE</h1>
+            <p class="lead text-center">
+                Info about pkce
+            </p>
+    </div>
+</div>
+  <div class="d-flex justify-content-center mb-5">
+    <a class="btn btn-primary text-center" href="{{ url_for('clear_session', response_type='pkce') }}">Clear Session</a>
+  </div>
+  <div class="jumbotron jumbotron-fluid collapse {{ 'show' if session['step'] == 1  }}">
+    <div class="container">
+      <h1 class="display-6 mt-5">Step 1:</h1>
+      <p class="lead mb-3" style="text-align: left;">
+        When the user clicks Login in the application, the authorization call will look like this in the background:
+      </p>
+
+    <button class="btn btn-primary" id="login">Click to Login</button>
+      <p class="lead mt-3" id="pkce_code" style="text-align: left;">{{ pkce_code }}</p>
+      <p class="lead mt-3" id="pkce_state" style="text-align: left;">{{ pkce_state }}</p>   
+  </div>
+  </div>
+{% endblock %}
